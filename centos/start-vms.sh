@@ -5,9 +5,14 @@ if [[ $(id -u) -ne 0 ]]; then
   exit
 fi
 
-VMS=(cl1-master1 cl1-compute1 cl1-compute2 cl1-infra1 cl1-infra2 cl1-infra3)
+PRE=""
+if [[ $# -eq 1 ]]; then
+  PRE="$1"
+fi
+
+VMS=(master compute1 compute2 infra1 infra2 infra3)
 for i in ${VMS[@]}
 do
-  virsh start $i
+  virsh start ${PRE}$i
 done
 

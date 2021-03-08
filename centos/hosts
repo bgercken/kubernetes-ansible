@@ -1,17 +1,25 @@
-[kubernetes-master-nodes]
-kubernetes-master ansible_host=10.11.12.2
+[masters]
+cl1-master1.iadev.net ansible_host=192.168.122.200
 
-[kubernetes-worker-nodes]
-kubernetes-worker1 ansible_host=10.11.12.3
-kubernetes-worker2 ansible_host=10.11.12.4
+# kubernetes-master ansible_host=10.11.12.2
+
+[nodes]
+cl1-compute1.iadev.net ansible_host=192.168.122.201
+cl1-compute2.iadev.net ansible_host=192.168.122.202
+cl1-infra1.iadev.net ansible_host=192.168.122.203
+cl1-infra2.iadev.net ansible_host=192.168.122.204
+cl1-infra3.iadev.net ansible_host=192.168.122.205
+
+# kubernetes-worker1 ansible_host=10.11.12.3
+# kubernetes-worker2 ansible_host=10.11.12.4
 
 
 [kubernetes:children]
-kubernetes-worker-nodes
-kubernetes-master-nodes
+nodes
+masters
 
 [kubernetes:vars]
-ansible_password=vagrant
-ansible_ssh_user=vagrant
+ansible_password=password1
+ansible_ssh_user=root
 
 

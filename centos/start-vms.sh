@@ -14,5 +14,6 @@ VMS=(master compute1 compute2 infra1 infra2 infra3)
 for i in ${VMS[@]}
 do
   virsh start ${PRE}$i
+  sleep 2
 done
 

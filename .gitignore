@@ -1,0 +1,5 @@
+centos/ansible.log
+centos/playbooks/join_token
+centos/hosts-cl1
+centos/hosts-cl2
+centos/host-orig

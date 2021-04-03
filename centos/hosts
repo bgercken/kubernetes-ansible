@@ -1,5 +1,5 @@
 [masters]
-cl1-master1.iadev.net ansible_host=192.168.122.200
+cl1-master.iadev.net ansible_host=192.168.122.200
 
 # kubernetes-master ansible_host=10.11.12.2
 

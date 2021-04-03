@@ -1,5 +1,6 @@
 ad_addr: 192.168.122.200
 cidr_v: 10.244.0.0/16
+end_point: cl1-master.iadev.net
 
 prepackages:
 - curl
@@ -7,6 +8,7 @@ prepackages:
 - yum-utils
 - device-mapper-persistent-data
 - lvm2
+- net-tools
 
 dockerrpms:
 - https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.13-3.2.el7.x86_64.rpm
@@ -27,6 +29,7 @@ services:
 # Based on https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#check-required-ports
 # and https://coreos.com/flannel/docs/latest/troubleshooting.html (Firewalls section)
 master_ports:
+- "443/tcp"
 - "6443/tcp"
 - "2379-2380/tcp"
 - "10250-10252/tcp"
@@ -34,11 +37,11 @@ master_ports:
 - "8472/udp"
 
 worker_ports:
+- "443/tcp"
 - "10250/tcp"
 - "8285/udp"
 - "8472/udp"
 - "30000-32767/tcp"
-
 
 token_file: join_token
 

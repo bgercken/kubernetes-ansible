@@ -1,0 +1,39 @@
+---
+- hosts: all
+  become: yes
+  vars_files:
+  - env_variables
+  tasks:
+
+  - name: Setup the network driver
+    blockinfile:
+      path: "{{ k8s_cri_modules_file }}"
+      create: yes
+      block: |
+       overlay
+       br_netfilter
+      state: present
+
+  - name: Setup required sysctl params these persist across reboot
+    blockinfile:
+      path: "{{ k8s_cri_conf_file }}"
+      create: yes
+      block: |
+       net.bridge.bridge-nf-call-iptables  = 1
+       net.bridge.bridge-nf-call-ip6tables = 1
+       net.ipv4.ip_forward                 = 1
+       net.ipv4.conf.all.forwarding        = 1
+      state: present
+
+  - name: Disable selinux
+    ansible.builtin.command:
+      cmd: /bin/sed -e 's/^SELINUX=enforcing$/SELINUX=permissive/' -i /etc/selinux/config
+
+  - name: Reboot host and wait for it to restart
+    reboot:
+      msg: "Reboot initiated by Ansible"
+      connect_timeout: 5
+      reboot_timeout: 600
+      pre_reboot_delay: 0
+      post_reboot_delay: 30
+      test_command: whoami

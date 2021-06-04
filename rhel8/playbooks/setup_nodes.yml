@@ -1,0 +1,114 @@
+---
+- hosts: all
+  become: yes
+  vars_files:
+  - env_variables
+  tasks:
+  - name: Creating a repository file for Kubernetes
+    file:
+     path: /etc/yum.repos.d/kubernetes.repo
+     state: touch
+
+  - name: Adding repository details in Kubernetes repo file.
+    blockinfile:
+     path: /etc/yum.repos.d/kubernetes.repo
+     block: |
+      [kubernetes]
+      name=Kubernetes
+      baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+      enabled=1
+      gpgcheck=1
+      repo_gpgcheck=0
+      gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
+        https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+
+  - name: Update repos.
+    shell: |
+      /usr/bin/yum clean all
+      /usr/bin/yum update -y
+
+  - name: Installing required packages 1
+    yum:
+     name: "{{ prepackages }}"
+     state: present
+
+  - name: Setup the network driver
+    blockinfile:
+      path: "{{ k8s_cri_modules_file }}"
+      create: yes
+      block: |
+       overlay
+       br_netfilter
+      state: present
+ 
+  - name: Setup required sysctl params these persist across reboot
+    blockinfile:
+      path: "{{ k8s_cri_conf_file }}"
+      create: yes
+      block: |
+       net.bridge.bridge-nf-call-iptables  = 1
+       net.bridge.bridge-nf-call-ip6tables = 1
+       net.ipv4.ip_forward                 = 1
+       net.ipv4.conf.all.forwarding        = 1
+      state: present
+
+  # This happens every time but should not beak anything.
+  # Figure out how to make this conditional on the previous task.
+
+  - name: Apply sysctl changes without reboot and modprobe network drivers.
+    shell: |
+      sysctl --system
+      modprobe overlay
+      modprobe br_netfilter
+
+# - name: Installing Docker
+#   yum:
+#     name: "{{ dockerrpms }}"
+#     state: present
+
+## PODMAN IS IN PACAKGES ABOVE...SEE IF THAT WORKS.
+##  - name: Install Podman
+##    yum:
+##      name: "{{ podmanrpms }}"
+##      state: present    
+
+  - name: Update Firewall
+    shell: |
+      firewall-cmd --permanent --zone=trusted --change-interface=docker0
+      firewall-cmd --permanent --zone=trusted --add-port=4243/tcp
+      firewall-cmd --reload
+
+# - name: Install docker-compose
+#   shell: |
+#     curl -L "{{ docker_compose_url }}" -o /usr/local/bin/docker-compose
+#     chmod +x /usr/local/bin/docker-compose
+
+  - name: Installing required packages 2
+    yum:
+     name: "{{ packages }}"
+     state: present
+
+  - name: Starting and Enabling the required services
+    service:
+     name: "{{ item }}"
+     state: started
+     enabled: yes
+    with_items: "{{ services }}"
+
+  - name: Allow Network Ports in Firewalld
+    firewalld:
+      port: "{{ item }}"
+      state: enabled
+      permanent: yes
+      immediate: yes
+    with_items: "{{ master_ports if ('masters' in group_names) else worker_ports }}"
+
+  - name: Allow masquerading in Firewalld
+    firewalld:
+      masquerade: "yes"
+      state: enabled
+      permanent: yes
+      immediate: yes
+
+  - name: Enabling Bridge Firewall Rule
+    shell: "echo '1' > /proc/sys/net/bridge/bridge-nf-call-iptables"

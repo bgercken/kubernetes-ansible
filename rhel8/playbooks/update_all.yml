@@ -1,0 +1,40 @@
+---
+- hosts: all
+  become: yes
+  vars_files:
+  - env_variables
+  tasks:
+  - name: Check uptime
+    shell: |
+      uptime
+    register: uptime_output
+
+  - debug:
+      var: uptime_output
+
+  - name: Update all packages
+    yum:
+      name: '*'
+      state: latest
+
+  - name: Check for reboot
+    shell: |
+      LAST_KERNEL=$(rpm -q --last kernel | awk 'NR==1{sub(/kernel-/,""); print $1}'); \
+      CURRENT_KERNEL=$(uname -r); \
+      if [[ $LAST_KERNEL != $CURRENT_KERNEL ]]; then echo 'reboot'; else echo 'no'; fi
+    ignore_errors: true
+    register: reboot_hint
+
+  - debug:
+      var: reboot_hint
+
+  - name: Rebooting
+    ansible.builtin.command:
+      cmd: /usr/sbin/shutdown -r now "Reboot required for updated kernel."
+    when: reboot_hint == 'reboot'
+    register: rebooting
+
+  - name: Wait for host to reboot.
+    pause: seconds=25
+    when: reboot_hint == 'reboot'
+

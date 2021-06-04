@@ -1,0 +1,19 @@
+[masters]
+cl1-master.iadev.net ansible_host=10.3.1.200
+
+[nodes]
+cl1-compute1.iadev.net ansible_host=10.3.1.201
+cl1-compute2.iadev.net ansible_host=10.3.1.202
+cl1-infra1.iadev.net ansible_host=10.3.1.203
+cl1-infra2.iadev.net ansible_host=10.3.1.204
+cl1-infra3.iadev.net ansible_host=10.3.1.205
+
+[kubernetes:children]
+nodes
+masters
+
+[kubernetes:vars]
+ansible_password=password1
+ansible_ssh_user=root
+
+

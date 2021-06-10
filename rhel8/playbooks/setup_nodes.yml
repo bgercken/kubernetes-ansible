@@ -4,23 +4,30 @@
   vars_files:
   - env_variables
   tasks:
-  - name: Creating a repository file for Kubernetes
+
+  - name: Install yq
+    shell: |
+      curl -L "{{ yq_url }}" -o /usr/bin/yq
+      chmod +x /usr/bin/yq
+
+  - name: Creating a repository file for Kubernetes.
     file:
-     path: /etc/yum.repos.d/kubernetes.repo
-     state: touch
+      path: /etc/yum.repos.d/kubernetes.repo
+      state: touch
 
   - name: Adding repository details in Kubernetes repo file.
     blockinfile:
-     path: /etc/yum.repos.d/kubernetes.repo
-     block: |
-      [kubernetes]
-      name=Kubernetes
-      baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
-      enabled=1
-      gpgcheck=1
-      repo_gpgcheck=0
-      gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
-        https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+      path: /etc/yum.repos.d/kubernetes.repo
+      block: |
+        [kubernetes]
+        name=Kubernetes
+        baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+        enabled=0
+        gpgcheck=1
+        repo_gpgcheck=0
+        gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
+          https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+      state: present
 
   - name: Update repos.
     shell: |
@@ -61,16 +68,15 @@
       modprobe overlay
       modprobe br_netfilter
 
-# - name: Installing Docker
-#   yum:
-#     name: "{{ dockerrpms }}"
-#     state: present
+  #- name: Install container modules
+    #dnf:
+      #name: "{{ containermodules }}"
+      #state: present
 
-## PODMAN IS IN PACAKGES ABOVE...SEE IF THAT WORKS.
-##  - name: Install Podman
-##    yum:
-##      name: "{{ podmanrpms }}"
-##      state: present    
+  #- name: Install podman
+    #package:
+      #name: "{{ containerpackages }}"
+      #state: present
 
   - name: Update Firewall
     shell: |
@@ -78,15 +84,11 @@
       firewall-cmd --permanent --zone=trusted --add-port=4243/tcp
       firewall-cmd --reload
 
-# - name: Install docker-compose
-#   shell: |
-#     curl -L "{{ docker_compose_url }}" -o /usr/local/bin/docker-compose
-#     chmod +x /usr/local/bin/docker-compose
-
-  - name: Installing required packages 2
+  - name: Installing Kubernetes packages
     yum:
-     name: "{{ packages }}"
+     name: "{{ k8s_packages }}"
      state: present
+     enablerepo: "{{k8s_repo}}"
 
   - name: Starting and Enabling the required services
     service:

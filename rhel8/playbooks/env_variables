@@ -1,6 +1,16 @@
 ad_addr: 10.3.1.200
 cidr_v: 10.244.0.0/16
 end_point: cl1-master.iadev.net
+crio_socket: /var/run/crio/crio.sock
+
+kubeadm_config_yaml: ~/kubeadm-config.yaml
+
+cluster_name: cl1-cluster
+kubernetes_version: v1.21.1
+k8s_version: 1.21
+
+rhn_user: bgercken
+rhn_pass: RHy0s3m1t3
 
 prepackages:
 - curl
@@ -9,25 +19,30 @@ prepackages:
 - device-mapper-persistent-data
 - lvm2
 - net-tools
-- container-tools
+- jq
+
+containermodules:
+- "@container-tools"
+
+containerpackages:
+- podman
 - podman-docker
 
-### dockerrpms:
-### - https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.13-3.2.el7.x86_64.rpm
-### - https://download.docker.com/linux/centos/7/x86_64/stable/Packages/docker-ce-19.03.9-3.el7.x86_64.rpm
-### - https://download.docker.com/linux/centos/7/x86_64/stable/Packages/docker-ce-cli-19.03.9-3.el7.x86_64.rpm
+yq_url: https://github.com/mikefarah/yq/releases/download/v4.9.3/yq_linux_amd64
 
-### docker_compose_url: "https://github.com/docker/compose/releases/download/1.28.2/docker-compose-$(uname -s)-$(uname -m)"
+k8s_repo: kubernetes
 
-packages:
+k8s_packages:
 - kubeadm
 - kubectl
 
+cni_url: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
 services:
-- docker
 - kubelet
 - firewalld
 
+# - podman
 # Based on https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#check-required-ports
 # and https://coreos.com/flannel/docs/latest/troubleshooting.html (Firewalls section)
 master_ports:
@@ -51,3 +66,27 @@ k8s_crt_file: /etc/kubernetes/pki/ca.crt
 k8s_cri_conf_file: /etc/sysctl.d/99-kubernetes-cri.conf
 k8s_cri_modules_file: /etc/modules-load.d/containerd.conf
 
+libcontainer_repo: /etc/yum.repos.d/devel:kubic:libcontainers:stable.repo
+libcontainer_repo_url: https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/CentOS_8/devel:kubic:libcontainers:stable.repo
+
+kublet_cgroup_conf_file: /usr/lib/systemd/system/kubelet.service.d/11-cgroups.conf
+
+crio_conf_d_dir: /etc/crio/crio.conf.d
+crio_cgroup_conf_file: /etc/crio/crio.conf.d/02-cgroup-manager.conf
+
+crio_repo: /etc/yum.repos.d/devel:kubic:libcontainers:stable:cri-o:{{k8s_version}}.repo
+crio_repo_url: https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:{{k8s_version}}/CentOS_8/devel:kubic:libcontainers:stable:cri-o:{{k8s_version}}.repo
+
+crio_srv_dir: /srv/k8s/cri-o/
+crio_packages:
+- cri-o-1.21.0-4.3.el8.x86_64.rpm
+- socat-1.7.3.3-2.el8.x86_64.rpm
+
+crio_rpm: cri-o-1.21.0-4.3.el8.x86_64.rpm
+socat_rpm: socat-1.7.3.3-2.el8.x86_64.rpm
+crio_repo_key: cri-repo.xml.key
+runc_rpm: runc-1.0.0-378.rc95.el8.2.5.x86_64.rpm
+
+pkg_tmp: /tmp/
+
+kubelet_config: /etc/sysconfig/kubelet

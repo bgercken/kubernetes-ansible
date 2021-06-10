@@ -1,0 +1,87 @@
+---
+- hosts: all
+  become: yes
+  vars_files:
+  - env_variables
+
+  tasks:
+
+  - name: Copy CRI-O rpm to destination.
+    ansible.builtin.copy:
+      src: "{{crio_srv_dir}}{{crio_rpm}}"
+      dest: "{{pkg_tmp}}"
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: Copy socat rpm to destination.
+    ansible.builtin.copy:
+      src: "{{crio_srv_dir}}{{socat_rpm}}"
+      dest: "{{pkg_tmp}}"
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: Copy runc updated rpm to destination.
+    ansible.builtin.copy:
+      src: "{{crio_srv_dir}}{{runc_rpm}}"
+      dest: "{{pkg_tmp}}"
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: Copy repo key.
+    ansible.builtin.copy:
+      src: "{{crio_srv_dir}}{{crio_repo_key}}"
+      dest: "{{pkg_tmp}}"
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: Import repo key.
+    shell: |
+      rpm --import "{{pkg_tmp}}{{crio_repo_key}}"
+
+  - name: Install CRI-O package.
+    shell: |
+      yum install -y "{{pkg_tmp}}{{crio_rpm}}" "{{pkg_tmp}}{{socat_rpm}}"
+
+  - name: Update runc package fixes CAP_PERFMON bug.
+    shell: |
+      yum update -y "{{pkg_tmp}}{{runc_rpm}}"
+
+  - name: Create CRI-O cgroups directory
+    file:
+      path: "{{crio_conf_d_dir}}"
+      state: directory
+      owner: root
+      group: root
+      mode: 0755
+
+  - name: Setup cgroups for CRI-O
+    blockinfile:
+      path: "{{crio_cgroup_conf_file}}"
+      create: yes
+      block: |
+        [crio.runtime]
+        conmon_cgroup = "pod"
+        cgroup_manager = "cgroupfs"
+      state: present
+
+  - name: Fix kublet service stats
+    blockinfile:
+      path: "{{kublet_cgroup_conf_file}}"
+      create: yes
+      block: |
+        [Service]
+        CPUAccounting=true
+        MemoryAccounting=true
+      state: present
+
+  - name: Enable CRI-O
+    ansible.builtin.systemd:
+      name: cri-o
+      enabled: yes
+      daemon_reload: yes
+      state: started
+      

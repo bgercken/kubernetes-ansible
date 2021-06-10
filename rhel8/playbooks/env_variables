@@ -9,8 +9,8 @@ cluster_name: cl1-cluster
 kubernetes_version: v1.21.1
 k8s_version: 1.21
 
-rhn_user: bgercken
-rhn_pass: RHy0s3m1t3
+rhn_user: USERNAME
+rhn_pass: PASSWORD
 
 prepackages:
 - curl
